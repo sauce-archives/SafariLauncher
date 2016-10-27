@@ -12,12 +12,14 @@
 #import "ViewController.h"
 #import "QuartzCore/QuartzCore.h"
 #import <AVFoundation/AVFoundation.h>
+#import <AudioToolbox/AudioToolbox.h>
+#import <AVFoundation/AVFoundation.h>
 
 
 
 @interface ViewController ()
 
-@property (nonatomic, strong) AVQueuePlayer *player;
+@property (nonatomic, strong) AVAudioPlayer *player;
 @property (nonatomic, strong) id timeObserver;
 
 @end
@@ -40,30 +42,17 @@ NSUInteger secondsLeft;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    NSError *sessionError = nil;
+    
     [[AVAudioSession sharedInstance] setDelegate:self];
-    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord error:&sessionError];
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord error:nil];
     
     // Change the default output audio route
     UInt32 doChangeDefaultRoute = 1;
     AudioSessionSetProperty(kAudioSessionProperty_OverrideCategoryDefaultToSpeaker,
                             sizeof(doChangeDefaultRoute), &doChangeDefaultRoute);
-    NSArray *queue = @[
-                       [AVPlayerItem playerItemWithURL:[[NSBundle mainBundle] URLForResource:@"blank" withExtension:@"mp3"]]];
-    
-    self.player = [[AVQueuePlayer alloc] initWithItems:queue];
-    self.player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
-    
-    
-    
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(playerItemDidReachEnd:)
-                                                 name:AVPlayerItemDidPlayToEndTimeNotification
-                                               object:[_player currentItem]];
+    self.player = [[AVAudioPlayer alloc] initWithContentsOfURL:[[NSBundle mainBundle] URLForResource:@"blank" withExtension:@"mp3"]  error:nil];
+    _player.numberOfLoops = -1;
     _player.play;
-    
-    
 
     Preferences *preferences = [Preferences sharedInstance];
     // Do any additional setup after loading the view.
@@ -123,11 +112,6 @@ NSUInteger secondsLeft;
     }
     infoLabel.text = [NSString stringWithFormat:@"  Launching: %@", urlArg];
     [SafariLauncher launch:urlArg];
-}
-- (void)playerItemDidReachEnd:(NSNotification *)notification {
-    AVPlayerItem *p = [notification object];
-    [p seekToTime:kCMTimeZero];
-    NSLog(@"Player is reseted");
 }
 
 @end
